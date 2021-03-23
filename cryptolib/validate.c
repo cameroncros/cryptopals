@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
+#include "xor.h"
 
 double character_frequencies[] = {
         .08167,  // 'a'
@@ -70,4 +71,24 @@ double entropy(unsigned char *str, size_t str_len) {
     }
     free(hist), hist = NULL;
     return H;
+}
+
+int hamming_distance(const char *string1, const char *string2, int string1_length) {
+    size_t length = string1_length;
+    char *output = malloc(length);
+
+    xor_bytes(string1, length, string2, length, output, &length);
+    int distance = 0;
+    for (size_t i = 0; i < length; i++) {
+        distance += output[i] >> 0 & 0x1;
+        distance += output[i] >> 1 & 0x1;
+        distance += output[i] >> 2 & 0x1;
+        distance += output[i] >> 3 & 0x1;
+        distance += output[i] >> 4 & 0x1;
+        distance += output[i] >> 5 & 0x1;
+        distance += output[i] >> 6 & 0x1;
+        distance += output[i] >> 7 & 0x1;
+    }
+    free(output), output = NULL;
+    return distance;
 }
