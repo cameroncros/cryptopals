@@ -78,4 +78,5 @@ void base64_decode(const char *data,
         if (j < *output_length) output[j++] = (triple >> 1 * 8) & 0xFF;
         if (j < *output_length) output[j++] = (triple >> 0 * 8) & 0xFF;
     }
+    *output_length = expected_output_length;
 }
