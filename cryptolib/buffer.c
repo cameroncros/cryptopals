@@ -3,7 +3,8 @@
 
 #define BLOCK_WIDTH 16
 
-void print_buffer(unsigned char *buffer, size_t buffer_size) {
+void print_buffer(const unsigned char *buffer, size_t buffer_size) {
+    printf("Buffer (%p):\n\n", buffer);
     for (size_t i = 0; i < buffer_size + BLOCK_WIDTH; i += BLOCK_WIDTH) {
         for (size_t j = 0; j < BLOCK_WIDTH; j++) {
             if (i + j < buffer_size) {
@@ -24,7 +25,7 @@ void print_buffer(unsigned char *buffer, size_t buffer_size) {
 #define KWHT  "\x1B[37m"
 #define RESET   "\033[0m"
 
-int diff_buffers(unsigned char *buffer, size_t buffer_size, unsigned char *buffer2, size_t buffer2_size) {
+int diff_buffers(const unsigned char *buffer, size_t buffer_size, const unsigned char *buffer2, size_t buffer2_size) {
     int diff_bytes = 0;
     size_t max_buffer = buffer_size;
     if (buffer2_size > max_buffer)

@@ -50,9 +50,9 @@ void build_decoding_table() {
 }
 
 
-void base64_decode(const char *data,
+void base64_decode(const unsigned char *data,
                    size_t input_length,
-                   char *output,
+                   unsigned char *output,
                    size_t *output_length) {
     build_decoding_table();
 

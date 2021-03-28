@@ -24,6 +24,7 @@ void read_b64_file(const char *filename, unsigned char *raw_bytes, size_t *raw_b
 
         free(line), line = NULL;
     }
+    free(line), line = NULL;
     printf("File Size: %u B64 characters\n", (uint) file_size);
 
     base64_decode(fullfile, file_size, raw_bytes, raw_bytes_size);

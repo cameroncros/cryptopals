@@ -49,7 +49,6 @@ TEST_F (CryptoPalsSet2, Challenge10a) {
 TEST_F (CryptoPalsSet2, Challenge10b) {
     MKBUFFER(raw_bytes, 5000);
     read_b64_file("10.txt", raw_bytes, &raw_bytes_size);
-    print_buffer(raw_bytes, raw_bytes_size);
 
     MKBUFFER(decrypted, 5000);
     MKBUFFER_S(key, "YELLOW SUBMARINE");
@@ -58,12 +57,12 @@ TEST_F (CryptoPalsSet2, Challenge10b) {
             key, iv,
             decrypted, &decrypted_size);
     printf("%.*s\n", (int)decrypted_size, decrypted);
-//    MKBUFFER(reencrypted, 5000);
-//    CBC_enc(decrypted, decrypted_size,
-//            key, iv,
-//            reencrypted, &reencrypted_size);
-//
-//    ASSERT_EQ(raw_bytes_size, reencrypted_size);
-//    ASSERT_EQ(0, diff_buffers(raw_bytes, raw_bytes_size,
-//                              reencrypted, reencrypted_size));
+    MKBUFFER(reencrypted, 5000);
+    CBC_enc(decrypted, decrypted_size,
+            key, iv,
+            reencrypted, &reencrypted_size);
+
+    ASSERT_EQ(raw_bytes_size, reencrypted_size);
+    ASSERT_EQ(0, diff_buffers(raw_bytes, raw_bytes_size,
+                              reencrypted, reencrypted_size));
 }
