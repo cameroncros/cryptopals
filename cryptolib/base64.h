@@ -3,14 +3,14 @@
 
 #include <stdlib.h>
 
-void base64_encode(const char *data,
+void base64_encode(const unsigned char *data,
                    size_t input_length,
-                   char *output_buffer,
+                   unsigned char *output_buffer,
                    size_t output_length);
 
-void base64_decode(const char *data,
+void base64_decode(const unsigned char *data,
                    size_t input_length,
-                   char *output,
+                   unsigned char *output,
                    size_t *output_length);
 
 #endif  // BASE64_H

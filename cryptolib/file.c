@@ -5,10 +5,10 @@
 #include <assert.h>
 #include <string.h>
 
-void read_b64_file(const char *filename, char *raw_bytes, size_t *raw_bytes_size) {
+void read_b64_file(const char *filename, unsigned char *raw_bytes, size_t *raw_bytes_size) {
     size_t fullfile_size = *raw_bytes_size * 4/3;
 
-    char *fullfile = (char *) calloc(1, fullfile_size);
+    unsigned char *fullfile = (unsigned char *) calloc(1, fullfile_size);
     FILE *fp = fopen(filename, "r");
     char *line = NULL;
     size_t len = 0;

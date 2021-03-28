@@ -3,10 +3,10 @@
 
 #include <stdlib.h>
 
-void from_hex(const char *hexstr, size_t hexstr_length,
-              char *output_buffer, size_t *output_buffer_size);
+void from_hex(const  unsigned char *hexstr, size_t hexstr_length,
+              unsigned char *output_buffer, size_t *output_buffer_size);
 
-void to_hex(const char *str, size_t str_size,
-            char *output_hex, size_t *output_hex_length);
+void to_hex(const  unsigned char *str, size_t str_size,
+            unsigned char *output_hex, size_t *output_hex_length);
 
 #endif //UNTITLED_HEX_H
