@@ -13,7 +13,9 @@ extern "C" {
 #include <gtest/gtest.h>
 
 class CryptoPalsSet1 : public ::testing::Test {
-
+    void SetUp() {
+        init_crypto();
+    }
 };
 
 TEST_F (CryptoPalsSet1, Challenge1) {
@@ -208,14 +210,18 @@ TEST_F (CryptoPalsSet1, Challenge6b) {
 TEST_F (CryptoPalsSet1, Challenge7) {
     MKBUFFER(raw_bytes, 5000);
     read_b64_file("7.txt", raw_bytes, &raw_bytes_size);
-    print_buffer(raw_bytes, raw_bytes_size);
 
     unsigned char key[] = "YELLOW SUBMARINE";
 
     MKBUFFER(decrypted_bytes, 5000);
-    ECB(raw_bytes, raw_bytes_size, key, decrypted_bytes, &decrypted_bytes_size, false);
+    ECB_dec(raw_bytes, raw_bytes_size, key, decrypted_bytes, &decrypted_bytes_size);
 
-    printf("%.*s\n", (int) decrypted_bytes_size, decrypted_bytes);
+    MKBUFFER_S(start, "I'm back and I'm ringin' the bell");
+    ASSERT_TRUE(buffer_starts_with(decrypted_bytes, decrypted_bytes_size,
+                                   start, start_size));
+    MKBUFFER_S(end, "Play that funky music");
+    ASSERT_TRUE(buffer_starts_with(decrypted_bytes, decrypted_bytes_size,
+                                   start, start_size));
 }
 
 TEST_F (CryptoPalsSet1, Challenge8) {

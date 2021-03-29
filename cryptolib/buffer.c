@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <assert.h>
+#include <string.h>
 
 #define BLOCK_WIDTH 16
 
@@ -28,8 +31,7 @@ void print_buffer(const unsigned char *buffer, size_t buffer_size) {
 int diff_buffers(const unsigned char *buffer, size_t buffer_size, const unsigned char *buffer2, size_t buffer2_size) {
     int diff_bytes = 0;
     size_t max_buffer = buffer_size;
-    if (buffer2_size > max_buffer)
-    {
+    if (buffer2_size > max_buffer) {
         max_buffer = buffer2_size;
     }
     for (size_t i = 0; i < max_buffer + BLOCK_WIDTH; i += BLOCK_WIDTH) {
@@ -63,3 +65,14 @@ int diff_buffers(const unsigned char *buffer, size_t buffer_size, const unsigned
     return diff_bytes;
 }
 
+bool buffer_starts_with(const unsigned char *buffer, size_t buffer_size,
+                        const unsigned char *sub, size_t sub_size) {
+    assert(sub_size < buffer_size);
+    return memcmp(buffer, sub, sub_size) == 0;
+}
+
+bool buffer_ends_with(const unsigned char *buffer, size_t buffer_size,
+                      const unsigned char *sub, size_t sub_size) {
+    assert(sub_size < buffer_size);
+    return memcmp(buffer + buffer_size - sub_size, sub, sub_size) == 0;
+}
