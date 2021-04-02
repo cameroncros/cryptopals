@@ -194,27 +194,36 @@ TEST_F (CryptoPalsSet2, Challenge12a) {
 
 TEST_F (CryptoPalsSet2, Challenge12b) {
     int block_size = 16;
+    int length = 144;
     MKBUFFER(seed, 5000);
     MKBUFFER(known, 5000);
-    for (int i = 0; i < block_size; i++) {
+    for (int i = 0; i < length; i++) {
         MKBUFFER(actual, 5000);
-        memset(seed, 'A', block_size - i);
-        memcpy(seed + block_size - i - 1, known, i);
-        seed[block_size - 1] = 0;
-        oracle(seed, block_size - i - 1, actual, &actual_size);
+        memset(seed, 'A', length - i);
+        memcpy(seed + length - i - 1, known, i);
+        seed[length - 1] = 0;
+        oracle(seed, length - i - 1, actual, &actual_size);
 
-        for (char j = 0; j < 255; j++) {
+        for (unsigned char j = 0; j < 255; j++) {
             MKBUFFER(test, 5000);
-            memset(seed, 'A', block_size - i);
-            memcpy(seed + block_size - i - 1, known, i);
-            seed[block_size - 1] = j;
-            oracle(seed, block_size, test, &test_size);
+            memset(seed, 'A', length - i);
+            memcpy(seed + length - i - 1, known, i);
+            seed[length - 1] = j;
+            oracle(seed, length, test, &test_size);
 
-            if (memcmp(actual, test, block_size) == 0) {
+            if (memcmp(actual + length - block_size, test + length - block_size, block_size) == 0) {
                 std::cout << "Found a letter: " << j << std::endl;
                 known[i] = j;
                 break;
             }
         }
+        if (known[i] == 0) {
+            std::cout << "At the end." << std::endl;
+            break;
+        }
     }
+    EXPECT_STREQ("Rollin' in my 5.0\n"
+                 "With my rag-top down so my hair can blow\n"
+                 "The girlies on standby waving just to say hi\n"
+                 "Did you stop? No, I just drove by\n\x01", (char*)known);
 }
