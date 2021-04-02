@@ -79,8 +79,6 @@ void ECB_enc(const unsigned char *raw_bytes, size_t raw_bytes_size,
         size_t remaining_bytes = padded_size - processed_bytes;
         if (remaining_bytes > AES_BLOCK_SIZE) {
             remaining_bytes = AES_BLOCK_SIZE;
-        } else {
-            printf("Last block\n");
         }
         AssertAESSuccess(EVP_CipherUpdate(ctx, (unsigned char *) &temp_buffer, (int *) &temp_buffer_size,
                                           (unsigned char *) padded + processed_bytes,

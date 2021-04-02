@@ -12,9 +12,13 @@ extern "C" {
 
 #include <gtest/gtest.h>
 
+MKBUFFER(static_key, 16);
+
 class CryptoPalsSet2 : public ::testing::Test {
     void SetUp() {
         init_crypto();
+
+        gen_key(static_key, 16);
     }
 };
 
@@ -121,5 +125,78 @@ TEST_F (CryptoPalsSet2, Challenge11b) {
         int guess = detect_mode(encrypted, encrypted_size);
         print_buffer(encrypted, encrypted_size);
         ASSERT_EQ(mode, guess);
+    }
+}
+
+typedef void (*oracle_fn)(const unsigned char *, size_t, unsigned char *, size_t *);
+
+void oracle(const unsigned char *prepend, size_t prepend_size,
+            unsigned char *output, size_t *output_size) {
+    MKBUFFER_S(hidden, "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg"
+                       "aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq"
+                       "dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg"
+                       "YnkK");
+    MKBUFFER(decoded, 1000);
+    base64_decode(hidden, hidden_size, decoded, &decoded_size);
+
+    size_t buffer_size = prepend_size + decoded_size;
+    auto *buffer = static_cast<unsigned char *>(calloc(1, buffer_size));
+    if (prepend_size != 0) {
+        memcpy(buffer, prepend, prepend_size);
+    }
+    memcpy(buffer + prepend_size, decoded, decoded_size);
+
+    ECB_enc(buffer, buffer_size, static_key, output, output_size);
+
+    free(buffer), buffer = NULL;
+}
+
+
+#define MAX_BLOCK_SIZE 32
+
+int detect_ecb_block_size(oracle_fn oracleFn) {
+    MKBUFFER(unshifted, 5000);
+    oracleFn(NULL, 0, unshifted, &unshifted_size);
+
+    for (int i = 1; i < MAX_BLOCK_SIZE; i++) {
+        MKBUFFER(shifted, 5000);
+        MKBUFFER(prepend, MAX_BLOCK_SIZE);
+        prepend_size = i;
+        oracleFn(prepend, prepend_size, shifted, &shifted_size);
+        if (memcmp(unshifted, shifted + i, i) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+TEST_F (CryptoPalsSet2, Challenge12a) {
+    ASSERT_EQ(AES_BLOCK_SIZE, detect_ecb_block_size(oracle));
+}
+
+TEST_F (CryptoPalsSet2, Challenge12b) {
+    int block_size = 16;
+    MKBUFFER(seed, 5000);
+    MKBUFFER(known, 5000);
+    for (int i = 0; i < block_size; i++) {
+        MKBUFFER(actual, 5000);
+        memset(seed, 'A', block_size - i);
+        memcpy(seed + block_size - i - 1, known, i);
+        seed[block_size - 1] = 0;
+        oracle(seed, block_size - i - 1, actual, &actual_size);
+
+        for (char j = 0; j < 255; j++) {
+            MKBUFFER(test, 5000);
+            memset(seed, 'A', block_size - i);
+            memcpy(seed + block_size - i - 1, known, i);
+            seed[block_size - 1] = j;
+            oracle(seed, block_size, test, &test_size);
+
+            if (memcmp(actual, test, block_size) == 0) {
+                std::cout << "Found a letter: " << j << std::endl;
+                known[i] = j;
+                break;
+            }
+        }
     }
 }
