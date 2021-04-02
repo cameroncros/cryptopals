@@ -154,6 +154,23 @@ void oracle(const unsigned char *prepend, size_t prepend_size,
 
 #define MAX_BLOCK_SIZE 32
 
+int detect_block_size(oracle_fn oracleFn) {
+    MKBUFFER(unshifted, 5000);
+    oracleFn(NULL, 0, unshifted, &unshifted_size);
+
+    for (int i = 1; i < MAX_BLOCK_SIZE; i++) {
+        MKBUFFER(shifted, 5000);
+        MKBUFFER(prepend, MAX_BLOCK_SIZE);
+        prepend_size = i;
+        oracleFn(prepend, prepend_size, shifted, &shifted_size);
+        if (shifted_size != unshifted_size)
+        {
+            return shifted_size - unshifted_size;
+        }
+    }
+    return -1;
+}
+
 int detect_ecb_block_size(oracle_fn oracleFn) {
     MKBUFFER(unshifted, 5000);
     oracleFn(NULL, 0, unshifted, &unshifted_size);
@@ -172,6 +189,7 @@ int detect_ecb_block_size(oracle_fn oracleFn) {
 
 TEST_F (CryptoPalsSet2, Challenge12a) {
     ASSERT_EQ(AES_BLOCK_SIZE, detect_ecb_block_size(oracle));
+    ASSERT_EQ(AES_BLOCK_SIZE, detect_block_size(oracle));
 }
 
 TEST_F (CryptoPalsSet2, Challenge12b) {
