@@ -27,7 +27,7 @@ TEST_F (CryptoPalsSet1, Challenge1) {
              buffer, &buffer_size);
 
     MKBUFFER(outputbuffer, 1000);
-    base64_encode(buffer, buffer_size, outputbuffer, outputbuffer_size);
+    base64_encode(buffer, buffer_size, outputbuffer, &outputbuffer_size);
 
     printf("Result: [%s]\n", outputbuffer);
     ASSERT_STREQ("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t", (char *) outputbuffer);
@@ -119,7 +119,7 @@ TEST_F (CryptoPalsSet1, Challenge5) {
 TEST_F (CryptoPalsSet1, Challenge6a) {
     MKBUFFER_S(str1, "this is a test");
     MKBUFFER_S(str2, "wokka wokka!!!");
-    int distance = hamming_distance(str1, str2, str1_size);
+    int distance = hamming_distance(str1, str1_size, str2, str1_size);
     printf("Result: [%i]\n", distance);
     ASSERT_EQ(37, distance);
     printf("\n");
@@ -158,7 +158,7 @@ TEST_F (CryptoPalsSet1, Challenge6b) {
         for (int i = MIN_KEY_LENGTH; i < MAX_KEY_LENGTH; i++) {
 #define NUM_SAMPLES 50
             for (int j = 0; j < NUM_SAMPLES; j++) {
-                distances[i] += hamming_distance(raw_bytes + j * i,
+                distances[i] += hamming_distance(raw_bytes + j * i, i,
                                                  raw_bytes + (j + 1) * i, i);
             }
             distances[i] /= NUM_SAMPLES;

@@ -2,15 +2,12 @@
 #define BASE64_H
 
 #include <stdlib.h>
+#include "buffer.h"
 
-void base64_encode(const unsigned char *data,
-                   size_t input_length,
-                   unsigned char *output_buffer,
-                   size_t output_length);
+void base64_encode(IMMUTABLE_BUFFER_PARAM(input),
+                   MUTABLE_BUFFER_PARAM(output));
 
-void base64_decode(const unsigned char *data,
-                   size_t input_length,
-                   unsigned char *output,
-                   size_t *output_length);
+void base64_decode(IMMUTABLE_BUFFER_PARAM(input),
+                   MUTABLE_BUFFER_PARAM(output));
 
 #endif  // BASE64_H

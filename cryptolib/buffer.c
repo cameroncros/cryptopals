@@ -3,10 +3,11 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
+#include "buffer.h"
 
 #define BLOCK_WIDTH 16
 
-void print_buffer(const unsigned char *buffer, size_t buffer_size) {
+void print_buffer(IMMUTABLE_BUFFER_PARAM(buffer)) {
     printf("Buffer (%p):\n\n", buffer);
     for (size_t i = 0; i < buffer_size + BLOCK_WIDTH; i += BLOCK_WIDTH) {
         for (size_t j = 0; j < BLOCK_WIDTH; j++) {
@@ -28,7 +29,7 @@ void print_buffer(const unsigned char *buffer, size_t buffer_size) {
 #define KWHT  "\x1B[37m"
 #define RESET   "\033[0m"
 
-int diff_buffers(const unsigned char *buffer, size_t buffer_size, const unsigned char *buffer2, size_t buffer2_size) {
+int diff_buffers(IMMUTABLE_BUFFER_PARAM(buffer), IMMUTABLE_BUFFER_PARAM(buffer2)) {
     int diff_bytes = 0;
     size_t max_buffer = buffer_size;
     if (buffer2_size > max_buffer) {
@@ -65,14 +66,14 @@ int diff_buffers(const unsigned char *buffer, size_t buffer_size, const unsigned
     return diff_bytes;
 }
 
-bool buffer_starts_with(const unsigned char *buffer, size_t buffer_size,
-                        const unsigned char *sub, size_t sub_size) {
+bool buffer_starts_with(IMMUTABLE_BUFFER_PARAM(buffer),
+                        IMMUTABLE_BUFFER_PARAM(sub)) {
     assert(sub_size < buffer_size);
     return memcmp(buffer, sub, sub_size) == 0;
 }
 
-bool buffer_ends_with(const unsigned char *buffer, size_t buffer_size,
-                      const unsigned char *sub, size_t sub_size) {
+bool buffer_ends_with(IMMUTABLE_BUFFER_PARAM(buffer),
+                      IMMUTABLE_BUFFER_PARAM(sub)) {
     assert(sub_size < buffer_size);
     return memcmp(buffer + buffer_size - sub_size, sub, sub_size) == 0;
 }

@@ -2,7 +2,8 @@
 #define CRYPTOPALS_FILE_H
 
 #include <stdlib.h>
+#include "buffer.h"
 
-void read_b64_file(const char *filename, unsigned char *raw_bytes, size_t *raw_bytes_size);
+void read_b64_file(const char *filename, MUTABLE_BUFFER_PARAM(raw_bytes));
 
 #endif //CRYPTOPALS_FILE_H

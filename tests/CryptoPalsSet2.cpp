@@ -18,18 +18,17 @@ class CryptoPalsSet2 : public ::testing::Test {
     void SetUp() {
         init_crypto();
 
-        gen_key(static_key, 16);
+        gen_key(static_key, &static_key_size);
     }
 };
 
 TEST_F (CryptoPalsSet2, Challenge9) {
-    MKBUFFER(buffer, 100);
+    MKBUFFER(buffer, 20);
     MKBUFFER_S(key, "YELLOW SUBMARINE");
     pkcs7_pad(key, key_size,
-              buffer, 20);
+              buffer, &buffer_size);
     ASSERT_EQ(0, memcmp("YELLOW SUBMARINE", buffer, 16));
     ASSERT_EQ(0, memcmp("\x04\x04\x04\x04", buffer + 16, 4));
-    ASSERT_EQ(buffer[20], '\0');
 }
 
 TEST_F (CryptoPalsSet2, Challenge10a) {
@@ -73,23 +72,23 @@ TEST_F (CryptoPalsSet2, Challenge10b) {
 
 TEST_F (CryptoPalsSet2, Challenge11a) {
     MKBUFFER(key, 16);
-    gen_key(key, key_size);
+    gen_key(key, &key_size);
     print_buffer(key, key_size);
 }
 
-int random_encrypt(const unsigned char *buffer, size_t buffer_size,
-                   unsigned char *output, size_t *output_size) {
+int random_encrypt(IMMUTABLE_BUFFER_PARAM(buffer),
+                   MUTABLE_BUFFER_PARAM(output)) {
     MKBUFFER(key, 16);
-    gen_key(key, 16);
+    gen_key(key, &key_size);
 
     MKBUFFER(iv, 16);
-    gen_key(iv, 16);
+    gen_key(iv, &iv_size);
 
     MKBUFFER(prepend, 10);
-    gen_key(prepend, 10);
+    gen_key(prepend, &prepend_size);
     prepend_size = 5 + rand() % 5;
     MKBUFFER(append, 10);
-    gen_key(append, 10);
+    gen_key(append, &append_size);
     append_size = 5 + rand() % 5;
 
     size_t temp_size = buffer_size + prepend_size + append_size;
@@ -108,7 +107,7 @@ int random_encrypt(const unsigned char *buffer, size_t buffer_size,
     return mode;
 }
 
-int detect_mode(const unsigned char *buffer, size_t buffer_size) {
+int detect_mode(IMMUTABLE_BUFFER_PARAM(buffer)) {
     if (memcmp(buffer + AES_BLOCK_SIZE, buffer + 2 * AES_BLOCK_SIZE, AES_BLOCK_SIZE) == 0) {
         return EBC;
     } else {
@@ -128,10 +127,10 @@ TEST_F (CryptoPalsSet2, Challenge11b) {
     }
 }
 
-typedef void (*oracle_fn)(const unsigned char *, size_t, unsigned char *, size_t *);
+typedef void (*oracle_fn)(IMMUTABLE_BUFFER_PARAM(prepend), MUTABLE_BUFFER_PARAM(output));
 
-void oracle(const unsigned char *prepend, size_t prepend_size,
-            unsigned char *output, size_t *output_size) {
+void oracle(IMMUTABLE_BUFFER_PARAM(prepend),
+            MUTABLE_BUFFER_PARAM(output)) {
     MKBUFFER_S(hidden, "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg"
                        "aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq"
                        "dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg"
@@ -226,4 +225,15 @@ TEST_F (CryptoPalsSet2, Challenge12b) {
                  "With my rag-top down so my hair can blow\n"
                  "The girlies on standby waving just to say hi\n"
                  "Did you stop? No, I just drove by\n\x01", (char*)known);
+}
+
+void profile_file(const char *email, MUTABLE_BUFFER_PARAM(buffer))
+{
+
+}
+
+
+TEST_F(CryptoPalsSet2, Challenge13)
+{
+
 }

@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 #include "xor.h"
+#include "validate.h"
 
 double character_frequencies[] = {
         .08167,  // 'a'
@@ -32,13 +34,13 @@ double character_frequencies[] = {
         .13000   // ' '
 };
 
-double is_english(unsigned char *str, size_t length) {
+double is_english(IMMUTABLE_BUFFER_PARAM(str)) {
     double num_characters[256] = {0};
-    for (int i = 0; i < length; i++) {
+    for (int i = 0; i < str_size; i++) {
         num_characters[str[i]]++;
     }
     for (int i = 0; i < 256; i++) {
-        num_characters[i] /= length;
+        num_characters[i] /= str_size;
     }
     double score = 0;
     for (int i = 0; i < 26; i++) {
@@ -50,13 +52,13 @@ double is_english(unsigned char *str, size_t length) {
     return score;
 }
 
-double entropy(unsigned char *str, size_t str_len) {
+double entropy(IMMUTABLE_BUFFER_PARAM(str)) {
     int wherechar[256] = {0};
     int histlen = 0;
-    int *hist = calloc(str_len, sizeof(int));
+    int *hist = calloc(str_size, sizeof(int));
 
     for (int i = 0; i < 256; i++) wherechar[i] = -1;
-    for (size_t i = 0; i < str_len; i++) {
+    for (size_t i = 0; i < str_size; i++) {
         if (wherechar[(int) str[i]] == -1) {
             wherechar[(int) str[i]] = histlen;
             histlen++;
@@ -73,13 +75,14 @@ double entropy(unsigned char *str, size_t str_len) {
     return H;
 }
 
-int hamming_distance(const unsigned char *string1, const unsigned char *string2, int string1_length) {
-    size_t length = string1_length;
-    char *output = malloc(length);
+int hamming_distance(IMMUTABLE_BUFFER_PARAM(string1), IMMUTABLE_BUFFER_PARAM(string2)) {
+    assert(string1_size == string2_size);
+    size_t size = string1_size;
+    unsigned char *output = malloc(size);
 
-    xor_bytes(string1, length, string2, length, output, &length);
+    xor_bytes(string1, size, string2, size, output, &size);
     int distance = 0;
-    for (size_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < size; i++) {
         distance += output[i] >> 0 & 0x1;
         distance += output[i] >> 1 & 0x1;
         distance += output[i] >> 2 & 0x1;

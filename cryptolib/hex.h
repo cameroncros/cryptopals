@@ -2,11 +2,11 @@
 #define UNTITLED_HEX_H
 
 #include <stdlib.h>
+#include "buffer.h"
 
-void from_hex(const  unsigned char *hexstr, size_t hexstr_length,
-              unsigned char *output_buffer, size_t *output_buffer_size);
+void from_hex(IMMUTABLE_BUFFER_PARAM(hexstr),
+              MUTABLE_BUFFER_PARAM(output_buffer));
 
-void to_hex(const  unsigned char *str, size_t str_size,
-            unsigned char *output_hex, size_t *output_hex_length);
+void to_hex(IMMUTABLE_BUFFER_PARAM(str), MUTABLE_BUFFER_PARAM(output_hex));
 
 #endif //UNTITLED_HEX_H

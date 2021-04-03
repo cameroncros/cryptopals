@@ -1,11 +1,12 @@
 #include "file.h"
 #include "base64.h"
+#include "buffer.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
-void read_b64_file(const char *filename, unsigned char *raw_bytes, size_t *raw_bytes_size) {
+void read_b64_file(const char *filename, MUTABLE_BUFFER_PARAM(raw_bytes)) {
     size_t fullfile_size = *raw_bytes_size * 4/3;
 
     unsigned char *fullfile = (unsigned char *) calloc(1, fullfile_size);

@@ -28,37 +28,37 @@ void init_crypto() {
 }
 
 
-void gen_key(unsigned char *key, size_t key_size) {
-    for (int i = 0; i < key_size; i++) {
+void gen_key(MUTABLE_BUFFER_PARAM(key)) {
+    for (int i = 0; i < *key_size; i++) {
         key[i] = (char) rand();
     }
 }
 
-void pkcs7_pad(const unsigned char *block, size_t block_size,
-               unsigned char *padded, size_t padded_size) {
-    assert(padded_size > block_size);
-    assert(padded_size - block_size < 255);
+void pkcs7_pad(IMMUTABLE_BUFFER_PARAM(block),
+               MUTABLE_BUFFER_PARAM(padded)) {
+    assert(*padded_size > block_size);
+    assert(*padded_size - block_size < 255);
 
-    char padded_length = (char) (padded_size - block_size);
+    char padded_length = (char) (*padded_size - block_size);
     memcpy(padded, block, block_size);
     memset((void *) (padded + block_size), padded_length, padded_length);
 }
 
-void pkcs7_unpad(const unsigned char *block, size_t block_size,
+void pkcs7_unpad(IMMUTABLE_BUFFER_PARAM(block),
                  char unsigned *unpadded, size_t *unpadded_size) {
     assert(*unpadded_size >= block_size);
     assert(false);  //TODO: Implement this and use in EBC_dec();
 }
 
-void ECB_enc(const unsigned char *raw_bytes, size_t raw_bytes_size,
+void ECB_enc(IMMUTABLE_BUFFER_PARAM(raw_bytes),
              const unsigned char *key,
-             unsigned char *decrypted_bytes, size_t *decrypted_bytes_size) {
+             MUTABLE_BUFFER_PARAM(decrypted_bytes)) {
     size_t padded_size = 0;
     unsigned char *padded = NULL;
     if (raw_bytes_size % AES_BLOCK_SIZE != 0) {
         padded_size = (raw_bytes_size / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE;
         padded = calloc(1, padded_size);
-        pkcs7_pad(raw_bytes, raw_bytes_size, padded, padded_size);
+        pkcs7_pad(raw_bytes, raw_bytes_size, padded, &padded_size);
     } else {
         padded_size = raw_bytes_size;
         padded = calloc(1, padded_size);
@@ -98,9 +98,9 @@ void ECB_enc(const unsigned char *raw_bytes, size_t raw_bytes_size,
     free(padded);
 }
 
-void ECB_dec(const unsigned char *raw_bytes, size_t raw_bytes_size,
+void ECB_dec(IMMUTABLE_BUFFER_PARAM(raw_bytes),
              const unsigned char *key,
-             unsigned char *decrypted_bytes, size_t *decrypted_bytes_size) {
+             MUTABLE_BUFFER_PARAM(decrypted_bytes)) {
     size_t result_size = 0;
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     AssertAESSuccess(EVP_CIPHER_CTX_reset(ctx));
@@ -136,9 +136,9 @@ void ECB_dec(const unsigned char *raw_bytes, size_t raw_bytes_size,
     EVP_CIPHER_CTX_free(ctx);
 }
 
-void CBC_enc(const unsigned char *raw_bytes, size_t raw_bytes_size,
+void CBC_enc(IMMUTABLE_BUFFER_PARAM(raw_bytes),
              const unsigned char key[AES_BLOCK_SIZE], const unsigned char iv[AES_BLOCK_SIZE],
-             unsigned char *decrypted_bytes, size_t *decrypted_bytes_size) {
+             MUTABLE_BUFFER_PARAM(decrypted_bytes)) {
     size_t result_size = 0;
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX_reset(ctx);
@@ -182,9 +182,9 @@ void CBC_enc(const unsigned char *raw_bytes, size_t raw_bytes_size,
 
 
 void
-CBC_dec(const unsigned char *raw_bytes, size_t raw_bytes_size,
+CBC_dec(IMMUTABLE_BUFFER_PARAM(raw_bytes),
         const unsigned char key[AES_BLOCK_SIZE], const unsigned char iv[AES_BLOCK_SIZE],
-        unsigned char *decrypted_bytes, size_t *decrypted_bytes_size) {
+        MUTABLE_BUFFER_PARAM(decrypted_bytes)) {
 
     unsigned char *decoded_buffer = calloc(1, raw_bytes_size);
     size_t decoded_buffer_size = raw_bytes_size;
