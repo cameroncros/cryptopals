@@ -10,6 +10,7 @@ extern "C" {
 #include "../cryptolib/buffer.h"
 }
 
+#include <cstring>
 #include <gtest/gtest.h>
 
 MKBUFFER(static_key, 16);
@@ -162,8 +163,7 @@ int detect_block_size(oracle_fn oracleFn) {
         MKBUFFER(prepend, MAX_BLOCK_SIZE);
         prepend_size = i;
         oracleFn(prepend, prepend_size, shifted, &shifted_size);
-        if (shifted_size != unshifted_size)
-        {
+        if (shifted_size != unshifted_size) {
             return shifted_size - unshifted_size;
         }
     }
@@ -224,16 +224,60 @@ TEST_F (CryptoPalsSet2, Challenge12b) {
     EXPECT_STREQ("Rollin' in my 5.0\n"
                  "With my rag-top down so my hair can blow\n"
                  "The girlies on standby waving just to say hi\n"
-                 "Did you stop? No, I just drove by\n\x01", (char*)known);
+                 "Did you stop? No, I just drove by\n\x01", (char *) known);
 }
 
-void profile_file(const char *email, MUTABLE_BUFFER_PARAM(buffer))
-{
+void profile_for(IMMUTABLE_BUFFER_PARAM(email), MUTABLE_BUFFER_PARAM(buffer)) {
+    assert(strchr((char *) email, '=') == NULL);
+    assert(strchr((char *) email, '&') == NULL);
 
+    MKBUFFER(temp, 1000);
+
+    size_t written = snprintf((char *) temp, temp_size, "email=%.*s&uid=10&role=user", (int) email_size, email);
+    assert(written > 0);
+    assert(written < *buffer_size);
+    temp_size = written;
+
+    ECB_enc(temp, temp_size, static_key, buffer, buffer_size);
+}
+
+void decrypt_profile(IMMUTABLE_BUFFER_PARAM(profile), MUTABLE_BUFFER_PARAM(buffer)) {
+    ECB_dec(profile, profile_size, static_key, buffer, buffer_size);
 }
 
 
-TEST_F(CryptoPalsSet2, Challenge13)
-{
+TEST_F(CryptoPalsSet2, Challenge13a) {
+    MKBUFFER_S(email, "cameron@gmail.com");
+    MKBUFFER(output, 5000);
+    profile_for(email, email_size, output, &output_size);
 
+    MKBUFFER(decrypt, 5000);
+    decrypt_profile(output, output_size, decrypt, &decrypt_size);
+    ASSERT_STREQ("email=cameron@gmail.com&uid=10&role=user", (char *) decrypt);
+}
+
+TEST_F(CryptoPalsSet2, Challenge13b) {
+    // Get block aligned "email="(6) + email + "&uid=10&role="(13), email must be 32 - 6-13 = 13
+    MKBUFFER_S(email, "abc@gmail.com")
+    MKBUFFER(output, 5000);
+    profile_for(email, email_size, output, &output_size);
+    // Replace last block with one that contains "admin", padded to 16 instead
+    MKBUFFER(poisoned_email, 5000);
+    memset(poisoned_email, 'A', AES_BLOCK_SIZE - 6);
+    memcpy(poisoned_email + AES_BLOCK_SIZE - 6, "admin", 5);
+    memset(poisoned_email + AES_BLOCK_SIZE - 6 + 5, 16 - 5, 16 - 5);
+    poisoned_email_size = AES_BLOCK_SIZE * 2;
+    MKBUFFER(nasty, 5000);
+    profile_for(poisoned_email, poisoned_email_size, nasty, &nasty_size);
+    // Second block of nasty is now admin encoded as a block
+
+    // Build admin profile, using the first 2 blocks of the original email and profile
+    MKBUFFER(admin_profile,AES_BLOCK_SIZE * 3);
+    memcpy(admin_profile, output, AES_BLOCK_SIZE * 2);
+    // and the tainted block from the nasty profile.
+    memcpy(admin_profile + AES_BLOCK_SIZE *2, nasty + AES_BLOCK_SIZE, AES_BLOCK_SIZE);
+
+    MKBUFFER(decrypt, 5000);
+    decrypt_profile(admin_profile, admin_profile_size, decrypt, &decrypt_size);
+    ASSERT_STREQ("email=abc@gmail.com&uid=10&role=admin", (char *) decrypt);
 }

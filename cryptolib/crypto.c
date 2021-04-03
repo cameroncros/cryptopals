@@ -45,9 +45,16 @@ void pkcs7_pad(IMMUTABLE_BUFFER_PARAM(block),
 }
 
 void pkcs7_unpad(IMMUTABLE_BUFFER_PARAM(block),
-                 char unsigned *unpadded, size_t *unpadded_size) {
+                 MUTABLE_BUFFER_PARAM(unpadded)) {
     assert(*unpadded_size >= block_size);
-    assert(false);  //TODO: Implement this and use in EBC_dec();
+    unsigned char padded_num = block[block_size-1];
+    for (size_t i = block_size - 1; i > block_size - 1 - padded_num; i--)
+    {
+        assert(block[i] == padded_num);
+    }
+
+    *unpadded_size = block_size - padded_num;
+    memcpy(unpadded, block, *unpadded_size);
 }
 
 void ECB_enc(IMMUTABLE_BUFFER_PARAM(raw_bytes),
@@ -100,7 +107,7 @@ void ECB_enc(IMMUTABLE_BUFFER_PARAM(raw_bytes),
 
 void ECB_dec(IMMUTABLE_BUFFER_PARAM(raw_bytes),
              const unsigned char *key,
-             MUTABLE_BUFFER_PARAM(decrypted_bytes)) {
+             MUTABLE_BUFFER_PARAM(unpadded_bytes)) {
     size_t result_size = 0;
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     AssertAESSuccess(EVP_CIPHER_CTX_reset(ctx));
@@ -108,6 +115,9 @@ void ECB_dec(IMMUTABLE_BUFFER_PARAM(raw_bytes),
     AssertAESSuccess(EVP_CIPHER_CTX_set_padding(ctx, 0));
     AssertAESSuccess(EVP_CipherInit_ex(ctx, NULL, NULL, key, NULL, 0));
     print_buffer(raw_bytes, raw_bytes_size);
+
+    size_t decrypted_bytes_size = raw_bytes_size;
+    unsigned char *decrypted_bytes = (unsigned char *) calloc(1, decrypted_bytes_size);
 
     MKBUFFER(temp_buffer, AES_BLOCK_SIZE + EVP_MAX_BLOCK_LENGTH);
     for (size_t processed_bytes = 0; processed_bytes < raw_bytes_size; processed_bytes += AES_BLOCK_SIZE) {
@@ -122,16 +132,19 @@ void ECB_dec(IMMUTABLE_BUFFER_PARAM(raw_bytes),
         AssertAESSuccess(EVP_CipherUpdate(ctx, (unsigned char *) &temp_buffer, (int *) &temp_buffer_size,
                                           (unsigned char *) raw_bytes + processed_bytes,
                                           remaining_bytes));
-        assert(result_size + temp_buffer_size <= *decrypted_bytes_size);
+        assert(result_size + temp_buffer_size <= decrypted_bytes_size);
         memcpy(decrypted_bytes + result_size, temp_buffer, temp_buffer_size);
         result_size += temp_buffer_size;
     }
     temp_buffer_size = sizeof(temp_buffer);
     AssertAESSuccess(EVP_CipherFinal_ex(ctx, (unsigned char *) &temp_buffer, (int *) &temp_buffer_size));
-    assert(result_size + temp_buffer_size <= *decrypted_bytes_size);
+    assert(result_size + temp_buffer_size <= decrypted_bytes_size);
     memcpy(decrypted_bytes + result_size, temp_buffer, temp_buffer_size);
     result_size += temp_buffer_size;
-    *decrypted_bytes_size = result_size;
+    decrypted_bytes_size = result_size;
+
+    pkcs7_unpad(decrypted_bytes, decrypted_bytes_size, unpadded_bytes, unpadded_bytes_size);
+    free(decrypted_bytes), decrypted_bytes = NULL;
 
     EVP_CIPHER_CTX_free(ctx);
 }
