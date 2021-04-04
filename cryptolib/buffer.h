@@ -2,6 +2,8 @@
 #define CRYPTOPALS_BUFFER_H
 
 #include <stdbool.h>
+#include <stddef.h>
+
 
 #define MKBUFFER(a, size) unsigned char a[size] = {0}; size_t a##_size = sizeof(a);
 #define MKBUFFER_S(a, str) unsigned char a[] = str; size_t a##_size = sizeof(a) - 1;

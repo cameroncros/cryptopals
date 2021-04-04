@@ -1,6 +1,6 @@
 file(GLOB sources "*.cpp")
 add_executable(cryptopals_tests ${sources})
-target_link_libraries(cryptopals_tests cryptopals gtest gtest_main)
+target_link_libraries(cryptopals_tests cryptopals scenario gtest gtest_main)
 file(GLOB test_sources "*.txt")
 foreach(test_src ${test_sources})
     file(COPY ${test_src}

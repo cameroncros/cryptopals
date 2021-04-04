@@ -8,12 +8,15 @@ extern "C" {
 #include "../cryptolib/crypto.h"
 #include "../cryptolib/file.h"
 #include "../cryptolib/buffer.h"
+#include "../scenario/11.h"
+#include "../scenario/12.h"
+#include "../scenario/13.h"
+#include "../scenario/14.h"
 }
 
 #include <cstring>
 #include <gtest/gtest.h>
-
-MKBUFFER(static_key, 16);
+#include <cmath>
 
 class CryptoPalsSet2 : public ::testing::Test {
     void SetUp() {
@@ -77,37 +80,6 @@ TEST_F (CryptoPalsSet2, Challenge11a) {
     print_buffer(key, key_size);
 }
 
-int random_encrypt(IMMUTABLE_BUFFER_PARAM(buffer),
-                   MUTABLE_BUFFER_PARAM(output)) {
-    MKBUFFER(key, 16);
-    gen_key(key, &key_size);
-
-    MKBUFFER(iv, 16);
-    gen_key(iv, &iv_size);
-
-    MKBUFFER(prepend, 10);
-    gen_key(prepend, &prepend_size);
-    prepend_size = 5 + rand() % 5;
-    MKBUFFER(append, 10);
-    gen_key(append, &append_size);
-    append_size = 5 + rand() % 5;
-
-    size_t temp_size = buffer_size + prepend_size + append_size;
-    unsigned char *temp = (unsigned char *) calloc(1, temp_size);
-    memcpy(temp, prepend, prepend_size);
-    memcpy(temp + prepend_size, buffer, buffer_size);
-    memcpy(temp + prepend_size + buffer_size, append, append_size);
-
-    int mode = rand() % 2;
-    if (mode == CBC) {
-        CBC_enc(temp, temp_size, key, iv, output, output_size);
-    } else if (mode == EBC) {
-        ECB_enc(temp, temp_size, key, output, output_size);
-    }
-    free(temp), temp = nullptr;
-    return mode;
-}
-
 int detect_mode(IMMUTABLE_BUFFER_PARAM(buffer)) {
     if (memcmp(buffer + AES_BLOCK_SIZE, buffer + 2 * AES_BLOCK_SIZE, AES_BLOCK_SIZE) == 0) {
         return EBC;
@@ -126,29 +98,6 @@ TEST_F (CryptoPalsSet2, Challenge11b) {
         print_buffer(encrypted, encrypted_size);
         ASSERT_EQ(mode, guess);
     }
-}
-
-typedef void (*oracle_fn)(IMMUTABLE_BUFFER_PARAM(prepend), MUTABLE_BUFFER_PARAM(output));
-
-void oracle(IMMUTABLE_BUFFER_PARAM(prepend),
-            MUTABLE_BUFFER_PARAM(output)) {
-    MKBUFFER_S(hidden, "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg"
-                       "aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq"
-                       "dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg"
-                       "YnkK");
-    MKBUFFER(decoded, 1000);
-    base64_decode(hidden, hidden_size, decoded, &decoded_size);
-
-    size_t buffer_size = prepend_size + decoded_size;
-    auto *buffer = static_cast<unsigned char *>(calloc(1, buffer_size));
-    if (prepend_size != 0) {
-        memcpy(buffer, prepend, prepend_size);
-    }
-    memcpy(buffer + prepend_size, decoded, decoded_size);
-
-    ECB_enc(buffer, buffer_size, static_key, output, output_size);
-
-    free(buffer), buffer = NULL;
 }
 
 
@@ -179,70 +128,78 @@ int detect_ecb_block_size(oracle_fn oracleFn) {
         MKBUFFER(prepend, MAX_BLOCK_SIZE);
         prepend_size = i;
         oracleFn(prepend, prepend_size, shifted, &shifted_size);
-        if (memcmp(unshifted, shifted + i, i) == 0) {
+        if (memcmp(unshifted + unshifted_size-i, shifted + shifted_size - i, i) == 0) {
             return i;
         }
     }
     return -1;
 }
 
-TEST_F (CryptoPalsSet2, Challenge12a) {
-    ASSERT_EQ(AES_BLOCK_SIZE, detect_ecb_block_size(oracle));
-    ASSERT_EQ(AES_BLOCK_SIZE, detect_block_size(oracle));
+int detect_initial_offset(oracle_fn oracleFn) {
+    MKBUFFER(prepend, MAX_BLOCK_SIZE);
+
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        MKBUFFER(shifted, 5000);
+        prepend_size = i + (2 * AES_BLOCK_SIZE);
+        oracleFn(prepend, prepend_size, shifted, &shifted_size);
+        print_buffer(shifted, shifted_size);
+        for (size_t j = 0; j < shifted_size; j += AES_BLOCK_SIZE) {
+            if (memcmp(shifted + j, shifted + j + AES_BLOCK_SIZE, AES_BLOCK_SIZE) == 0) {
+                return j - i;
+            }
+        }
+    }
+    return -1;
 }
 
-TEST_F (CryptoPalsSet2, Challenge12b) {
-    int block_size = 16;
-    int length = 144;
+TEST_F (CryptoPalsSet2, Challenge12a) {
+    ASSERT_EQ(AES_BLOCK_SIZE, detect_ecb_block_size(oracle12));
+    ASSERT_EQ(AES_BLOCK_SIZE, detect_block_size(oracle12));
+    ASSERT_EQ(0, detect_initial_offset(oracle12));
+}
+
+void defeat_ecb(oracle_fn oracle, MUTABLE_BUFFER_PARAM(output))
+{
+    int offset = detect_initial_offset(oracle);
+    int offset_padding = AES_BLOCK_SIZE * ceil(offset/AES_BLOCK_SIZE) - offset;
+    int block_size = AES_BLOCK_SIZE;
+    int length = block_size * 20 + offset_padding;
     MKBUFFER(seed, 5000);
-    MKBUFFER(known, 5000);
     for (int i = 0; i < length; i++) {
         MKBUFFER(actual, 5000);
         memset(seed, 'A', length - i);
-        memcpy(seed + length - i - 1, known, i);
+        memcpy(seed + length - i - 1, output, i);
         seed[length - 1] = 0;
         oracle(seed, length - i - 1, actual, &actual_size);
 
         for (unsigned char j = 0; j < 255; j++) {
             MKBUFFER(test, 5000);
             memset(seed, 'A', length - i);
-            memcpy(seed + length - i - 1, known, i);
+            memcpy(seed + length - i - 1, output, i);
             seed[length - 1] = j;
             oracle(seed, length, test, &test_size);
 
             if (memcmp(actual + length - block_size, test + length - block_size, block_size) == 0) {
                 std::cout << "Found a letter: " << j << std::endl;
-                known[i] = j;
+                output[i] = j;
                 break;
             }
         }
-        if (known[i] == 0) {
+        if (output[i] == 0) {
+            *output_size = (size_t)i;
             std::cout << "At the end." << std::endl;
             break;
         }
     }
+}
+
+TEST_F (CryptoPalsSet2, Challenge12b) {
+    MKBUFFER(output, 5000);
+    defeat_ecb(oracle12, output, &output_size);
     EXPECT_STREQ("Rollin' in my 5.0\n"
                  "With my rag-top down so my hair can blow\n"
                  "The girlies on standby waving just to say hi\n"
-                 "Did you stop? No, I just drove by\n\x01", (char *) known);
-}
-
-void profile_for(IMMUTABLE_BUFFER_PARAM(email), MUTABLE_BUFFER_PARAM(buffer)) {
-    assert(strchr((char *) email, '=') == NULL);
-    assert(strchr((char *) email, '&') == NULL);
-
-    MKBUFFER(temp, 1000);
-
-    size_t written = snprintf((char *) temp, temp_size, "email=%.*s&uid=10&role=user", (int) email_size, email);
-    assert(written > 0);
-    assert(written < *buffer_size);
-    temp_size = written;
-
-    ECB_enc(temp, temp_size, static_key, buffer, buffer_size);
-}
-
-void decrypt_profile(IMMUTABLE_BUFFER_PARAM(profile), MUTABLE_BUFFER_PARAM(buffer)) {
-    ECB_dec(profile, profile_size, static_key, buffer, buffer_size);
+                 "Did you stop? No, I just drove by\n\x01", (char *) output);
 }
 
 
@@ -272,12 +229,27 @@ TEST_F(CryptoPalsSet2, Challenge13b) {
     // Second block of nasty is now admin encoded as a block
 
     // Build admin profile, using the first 2 blocks of the original email and profile
-    MKBUFFER(admin_profile,AES_BLOCK_SIZE * 3);
+    MKBUFFER(admin_profile, AES_BLOCK_SIZE * 3);
     memcpy(admin_profile, output, AES_BLOCK_SIZE * 2);
     // and the tainted block from the nasty profile.
-    memcpy(admin_profile + AES_BLOCK_SIZE *2, nasty + AES_BLOCK_SIZE, AES_BLOCK_SIZE);
+    memcpy(admin_profile + AES_BLOCK_SIZE * 2, nasty + AES_BLOCK_SIZE, AES_BLOCK_SIZE);
 
     MKBUFFER(decrypt, 5000);
     decrypt_profile(admin_profile, admin_profile_size, decrypt, &decrypt_size);
     ASSERT_STREQ("email=abc@gmail.com&uid=10&role=admin", (char *) decrypt);
+}
+
+TEST_F (CryptoPalsSet2, Challenge14a) {
+    ASSERT_EQ(AES_BLOCK_SIZE, detect_ecb_block_size(oracle14));
+    ASSERT_EQ(AES_BLOCK_SIZE, detect_block_size(oracle14));
+    ASSERT_EQ(INITIAL_OFFSET, detect_initial_offset(oracle14));
+}
+
+TEST_F (CryptoPalsSet2, Challenge14b) {
+    MKBUFFER(output, 5000);
+    defeat_ecb(oracle14, output, &output_size);
+    EXPECT_STREQ("Rollin' in my 5.0\n"
+                 "With my rag-top down so my hair can blow\n"
+                 "The girlies on standby waving just to say hi\n"
+                 "Did you stop? No, I just drove by\n\x01", (char *) output);
 }

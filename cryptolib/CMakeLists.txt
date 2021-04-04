@@ -3,5 +3,5 @@ project(cryptopals C)
 
 set(CMAKE_C_STANDARD 99)
 file(GLOB sources "*.c")
-add_library(cryptopals ${sources})
+add_library(cryptopals ${sources} ../scenario/13.c)
 target_link_libraries(cryptopals m ssl crypto)
