@@ -44,13 +44,25 @@ void pkcs7_pad(IMMUTABLE_BUFFER_PARAM(block),
     memset((void *) (padded + block_size), padded_length, padded_length);
 }
 
+bool is_pkcs7_padded(IMMUTABLE_BUFFER_PARAM(block)) {
+    unsigned char padded_num = block[block_size - 1];
+    for (size_t i = block_size - 1; i > block_size - 1 - padded_num; i--) {
+        if (block[i] != padded_num) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void pkcs7_unpad(IMMUTABLE_BUFFER_PARAM(block),
                  MUTABLE_BUFFER_PARAM(unpadded)) {
     assert(*unpadded_size >= block_size);
-    unsigned char padded_num = block[block_size-1];
-    for (size_t i = block_size - 1; i > block_size - 1 - padded_num; i--)
-    {
-        assert(block[i] == padded_num);
+    unsigned char padded_num = block[block_size - 1];
+    for (size_t i = block_size - 1; i > block_size - 1 - padded_num; i--) {
+        if (block[i] != padded_num) {
+            padded_num = 0;
+            break;
+        }
     }
 
     *unpadded_size = block_size - padded_num;
@@ -126,8 +138,6 @@ void ECB_dec(IMMUTABLE_BUFFER_PARAM(raw_bytes),
         size_t remaining_bytes = raw_bytes_size - processed_bytes;
         if (remaining_bytes > AES_BLOCK_SIZE) {
             remaining_bytes = AES_BLOCK_SIZE;
-        } else {
-            printf("Last block\n");
         }
         AssertAESSuccess(EVP_CipherUpdate(ctx, (unsigned char *) &temp_buffer, (int *) &temp_buffer_size,
                                           (unsigned char *) raw_bytes + processed_bytes,

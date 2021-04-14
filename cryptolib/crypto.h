@@ -1,5 +1,6 @@
 #include <glob.h>
 #include "buffer.h"
+#include <stdbool.h>
 
 #ifndef CRYPTOPALS_CRYPTO_H
 #define CRYPTOPALS_CRYPTO_H
@@ -14,6 +15,8 @@ void gen_key(MUTABLE_BUFFER_PARAM(key));
 
 void pkcs7_pad(IMMUTABLE_BUFFER_PARAM(block),
                MUTABLE_BUFFER_PARAM(padded));
+
+bool is_pkcs7_padded(IMMUTABLE_BUFFER_PARAM(block));
 
 void pkcs7_unpad(IMMUTABLE_BUFFER_PARAM(block),
                  MUTABLE_BUFFER_PARAM(unpadded));

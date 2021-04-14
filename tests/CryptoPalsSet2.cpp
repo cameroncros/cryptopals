@@ -253,3 +253,21 @@ TEST_F (CryptoPalsSet2, Challenge14b) {
                  "The girlies on standby waving just to say hi\n"
                  "Did you stop? No, I just drove by\n\x01", (char *) output);
 }
+
+TEST_F (CryptoPalsSet2, Challenge15)
+{
+    {
+        MKBUFFER_S(valid, "ICE ICE BABY\x04\x04\x04\x04")
+        EXPECT_TRUE(is_pkcs7_padded(valid, valid_size));
+    }
+    {
+        MKBUFFER_S(valid, "ICE ICE BABY\x05\x05\x05\x05")
+        EXPECT_FALSE(is_pkcs7_padded(valid, valid_size));
+    }
+    {
+        MKBUFFER_S(valid, "ICE ICE BABY\x01\x02\x03\x04")
+        EXPECT_FALSE(is_pkcs7_padded(valid, valid_size));
+    }
+}
+
+
