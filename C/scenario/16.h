@@ -1,0 +1,6 @@
+#ifndef CRYPTOPALS_16_H
+#define CRYPTOPALS_16_H
+
+
+
+#endif //CRYPTOPALS_16_H

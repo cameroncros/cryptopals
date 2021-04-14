@@ -225,19 +225,6 @@ CBC_dec(IMMUTABLE_BUFFER_PARAM(raw_bytes),
               decrypted_bytes + AES_BLOCK_SIZE, decrypted_bytes_size);
     *decrypted_bytes_size += AES_BLOCK_SIZE;
 
-//    assert(*decrypted_bytes_size == raw_bytes_size);
-
-//    for (size_t i = 0; i < decoded_buffer_size; i += AES_BLOCK_SIZE) {
-//        size_t block_size = (decoded_buffer_size - i);
-//        if (block_size >= AES_BLOCK_SIZE)
-//        {
-//            block_size = AES_BLOCK_SIZE;
-//        }
-//        xor_bytes(decoded_buffer + AES_BLOCK_SIZE + i, block_size,
-//                  raw_bytes + i, block_size,
-//                  decrypted_bytes + AES_BLOCK_SIZE + i, &block_size);
-//        *decrypted_bytes_size += block_size;
-//    }
     printf("%.*s\n", (int) *decrypted_bytes_size, decrypted_bytes);
     free(decoded_buffer), decoded_buffer = NULL;
 }
