@@ -15,3 +15,11 @@ def from_b64(buffer: bytes):
 
 def to_b64(buffer: bytes):
     return base64.b64encode(buffer)
+
+def print_buffer(buffer: bytes):
+    i = 0
+    for byte in buffer:
+        print("%02x " % byte, end='')
+        i += 1
+        if i % 16 == 0:
+            print()

@@ -134,6 +134,9 @@ class CryptoPalsS1(unittest.TestCase):
         self.assertEqual(b'Terminator X: Bring the noise', cipher_key)
 
     def test_challenge7(self):
+        """
+        ECB decrypt/encrypt
+        """
         with open("../../C/tests/7.txt", 'rb') as f:
             encrypted = from_b64(f.read())
         decrypted = dec_ECB(encrypted, b'YELLOW SUBMARINE')
@@ -145,6 +148,9 @@ class CryptoPalsS1(unittest.TestCase):
         self.assertEqual(encrypted, recrypted)
 
     def test_challenge8(self):
+        """
+        Detect ECB
+        """
         with open("../../C/tests/8.txt", 'rb') as f:
             lines = f.read().split(b'\n')
         found_lines = []
