@@ -3,10 +3,10 @@ import random
 import unittest
 from typing import Tuple
 
-from cryptolib.basics import from_b64, print_buffer
-from cryptolib.ssl import pkcs7_pad, pkcs7_unpad, dec_CBC, enc_CBC, enc_ECB, AES_BLOCK_SIZE, detect_ECB, dec_ECB, \
+from libhannah.basics import from_b64, print_buffer
+from libhannah.ssl import pkcs7_pad, pkcs7_unpad, dec_CBC, enc_CBC, enc_ECB, AES_BLOCK_SIZE, detect_ECB, dec_ECB, \
     pkcs7_validate
-from cryptolib.xor import xor
+from libhannah.xor import xor
 
 key = random.randbytes(16)
 iv = random.randbytes(16)

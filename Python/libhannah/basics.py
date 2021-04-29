@@ -23,3 +23,7 @@ def print_buffer(buffer: bytes):
         i += 1
         if i % 16 == 0:
             print()
+
+def diff_buffers(buffer1: bytes, buffer2: bytes):
+    pass
+

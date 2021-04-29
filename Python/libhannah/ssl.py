@@ -2,7 +2,7 @@ import random
 
 from Crypto.Cipher import AES
 
-from cryptolib.xor import xor
+from libhannah.xor import xor
 
 AES_BLOCK_SIZE = 16
 

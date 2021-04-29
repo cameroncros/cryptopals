@@ -1,6 +1,6 @@
 from math import log2
 
-from cryptolib.xor import xor
+from libhannah.xor import xor
 
 
 def entropy(buffer: bytes) -> float:  # Possibly broken, 3.5 -> 5 is english, 7.5 - 8 is encrypted

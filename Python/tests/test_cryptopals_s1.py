@@ -1,9 +1,9 @@
 import unittest
 
-from cryptolib.basics import to_b64, from_hex, from_b64, to_hex
-from cryptolib.ssl import dec_ECB, enc_ECB, detect_ECB
-from cryptolib.tools import is_english, hamming_distance
-from cryptolib.xor import xor
+from libhannah.basics import to_b64, from_hex, from_b64, to_hex
+from libhannah.ssl import dec_ECB, enc_ECB, detect_ECB
+from libhannah.tools import is_english, hamming_distance
+from libhannah.xor import xor
 
 
 def crack_xor(buffer: bytes) -> bytes:
