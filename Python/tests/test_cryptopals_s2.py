@@ -4,8 +4,7 @@ import unittest
 from typing import Tuple
 
 from libhannah.basics import from_b64, print_buffer
-from libhannah.ssl import pkcs7_pad, pkcs7_unpad, dec_CBC, enc_CBC, enc_ECB, AES_BLOCK_SIZE, detect_ECB, dec_ECB, \
-    pkcs7_validate
+from libhannah.ssl import pkcs7_pad, pkcs7_unpad, dec_CBC, enc_CBC, enc_ECB, AES_BLOCK_SIZE, detect_ECB, dec_ECB
 from libhannah.xor import xor
 
 key = random.randbytes(16)
@@ -120,7 +119,7 @@ class CryptoPalsS1(unittest.TestCase):
         """
         with open('../../C/tests/10.txt', 'rb') as f:
             encrypted = from_b64(f.read())
-        decrypted = dec_CBC(encrypted, b'YELLOW SUBMARINE', b'\x00' * 16)
+        decrypted = pkcs7_unpad(dec_CBC(encrypted, b'YELLOW SUBMARINE', b'\x00' * 16))
         self.assertTrue(decrypted.decode('UTF-8').startswith("I'm back and I'm ringin' the bell \n"
                                                              "A rockin' on the mike while the fly girls yell \n"
                                                              "In ecstasy in the back of me \n"))
@@ -184,9 +183,10 @@ class CryptoPalsS1(unittest.TestCase):
         """
         self.assertEqual(b"ICE ICE BABY",
                          pkcs7_unpad(b"ICE ICE BABY\x04\x04\x04\x04"))
-        self.assertTrue(pkcs7_validate(b"ICE ICE BABY\x04\x04\x04\x04"))
-        self.assertFalse(pkcs7_validate(b'ICE ICE BABY\x05\x05\x05\x05'))
-        self.assertFalse(pkcs7_validate(b'ICE ICE BABY\x01\x02\x03\x04'))
+        with self.assertRaises(Exception):
+            pkcs7_unpad(b'ICE ICE BABY\x05\x05\x05\x05')
+        with self.assertRaises(Exception):
+            pkcs7_unpad(b'ICE ICE BABY\x01\x02\x03\x04')
 
     def test_challenge16(self):
         data = encrypt_data16(b'a')

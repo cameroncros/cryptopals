@@ -9,6 +9,8 @@ AES_BLOCK_SIZE = 16
 
 def pkcs7_pad(buffer: bytes, block_size=AES_BLOCK_SIZE) -> bytes:
     padding = block_size - len(buffer) % block_size
+    if padding == 0:
+        padding = block_size
     return buffer + (bytes([padding]) * padding)
 
 
@@ -16,15 +18,8 @@ def pkcs7_unpad(buffer: bytes) -> bytes:
     padding = buffer[-1]
     for char in buffer[len(buffer) - padding: len(buffer)]:
         if char != padding:
-            padding = 0
+            raise Exception("Invalid Padding")
     return buffer[0: len(buffer) - padding]
-
-def pkcs7_validate(buffer: bytes) -> bool:
-    padding = buffer[-1]
-    for char in buffer[len(buffer) - padding: len(buffer)]:
-        if char != padding:
-            return False
-    return True
 
 def enc_ECB(buffer: bytes, key: bytes) -> bytes:
     assert (len(key) == AES_BLOCK_SIZE)
@@ -36,7 +31,7 @@ def enc_ECB(buffer: bytes, key: bytes) -> bytes:
         end = min(i + AES_BLOCK_SIZE, len(padded))
         next_chunk = padded[i:end]
         result += cipher.encrypt(next_chunk)
-    return pkcs7_unpad(result)
+    return result
 
 
 def dec_ECB(buffer: bytes, key: bytes) -> bytes:
@@ -88,4 +83,4 @@ def dec_CBC(buffer: bytes, key: bytes, iv: bytes) -> bytes:
         chunk = buffer[i:end]
         result += xor(cipher.decrypt(chunk), last_chunk)
         last_chunk = chunk
-    return pkcs7_unpad(result)
+    return result
