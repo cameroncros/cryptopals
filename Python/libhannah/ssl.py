@@ -16,9 +16,13 @@ def pkcs7_pad(buffer: bytes, block_size=AES_BLOCK_SIZE) -> bytes:
 
 def pkcs7_unpad(buffer: bytes) -> bytes:
     padding = buffer[-1]
+    if padding > len(buffer):
+        raise Exception("Invalid Padding - Longer than buffer")
+    if padding == 0:
+        raise Exception("Invalid Padding - Padding of zero?")
     for char in buffer[len(buffer) - padding: len(buffer)]:
         if char != padding:
-            raise Exception("Invalid Padding")
+            raise Exception("Invalid Padding - Not correctly padded")
     return buffer[0: len(buffer) - padding]
 
 def enc_ECB(buffer: bytes, key: bytes) -> bytes:

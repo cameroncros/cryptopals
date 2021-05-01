@@ -187,6 +187,10 @@ class CryptoPalsS1(unittest.TestCase):
             pkcs7_unpad(b'ICE ICE BABY\x05\x05\x05\x05')
         with self.assertRaises(Exception):
             pkcs7_unpad(b'ICE ICE BABY\x01\x02\x03\x04')
+        with self.assertRaises(Exception):
+            pkcs7_unpad(b'ICE ICE BABY\x01\x02\x03\xf1')
+        with self.assertRaises(Exception):
+            pkcs7_unpad(b'ICE ICE BABY\x01\x02\x03\x00')
 
     def test_challenge16(self):
         data = encrypt_data16(b'a')
