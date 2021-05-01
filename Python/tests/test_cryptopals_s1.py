@@ -40,6 +40,7 @@ class CryptoPalsS1(unittest.TestCase):
         self.assertEqual(b'746865206b696420646f6e277420706c6179',
                          to_hex(xor(from_hex(b'1c0111001f010100061a024b53535009181c'),
                                     from_hex(b'686974207468652062756c6c277320657965'))))
+        self.assertEqual(b'\x01\x00\x00\x04', xor(b'\x01\x02\x03\x04', b'\x02\x03', repeat=False, offset=1))
 
     def test_challenge3(self):
         """
