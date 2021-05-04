@@ -25,6 +25,7 @@ def pkcs7_unpad(buffer: bytes) -> bytes:
             raise Exception("Invalid Padding - Not correctly padded")
     return buffer[0: len(buffer) - padding]
 
+
 def enc_ECB(buffer: bytes, key: bytes) -> bytes:
     assert (len(key) == AES_BLOCK_SIZE)
     cipher = AES.new(key, AES.MODE_ECB)
@@ -88,3 +89,20 @@ def dec_CBC(buffer: bytes, key: bytes, iv: bytes) -> bytes:
         result += xor(cipher.decrypt(chunk), last_chunk)
         last_chunk = chunk
     return result
+
+
+def enc_CTR(buffer: bytes, key: bytes, nonce: bytes = b'\x00' * 8) -> bytes:
+    assert (len(key) == AES_BLOCK_SIZE)
+    assert (len(nonce) == AES_BLOCK_SIZE / 2)
+    ctr = 0
+    keystream = b''
+    while len(keystream) < len(buffer):
+        cipher = AES.new(key, AES.MODE_ECB)
+        keystream += cipher.encrypt(nonce + ctr.to_bytes(byteorder='little', length=8))
+        ctr += 1
+
+    return xor(buffer, keystream)
+
+
+def dec_CTR(buffer: bytes, key: bytes, nonce: bytes) -> bytes:
+    return enc_CTR(buffer, key, nonce)

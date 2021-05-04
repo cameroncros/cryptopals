@@ -2,22 +2,8 @@ import unittest
 
 from libhannah.basics import to_b64, from_hex, from_b64, to_hex
 from libhannah.ssl import dec_ECB, enc_ECB, detect_ECB
-from libhannah.tools import is_english, hamming_distance
+from libhannah.tools import is_english, hamming_distance, crack_xor
 from libhannah.xor import xor
-
-
-def crack_xor(buffer: bytes) -> bytes:
-    lowest_score = 999
-    best_key = None
-    for i in range(255):
-        key = bytes([i])
-        result = xor(buffer, key)
-        score = is_english(result)
-        # print("%i)[%f]: %s" % (i, score, result))
-        if score < lowest_score:
-            best_key = key
-            lowest_score = score
-    return best_key
 
 
 class CryptoPalsS1(unittest.TestCase):
