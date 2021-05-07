@@ -1,9 +1,12 @@
 import math
 import random
+import time
 import unittest
+from datetime import datetime, timedelta
 from typing import Tuple
 
 from libhannah.basics import from_b64, to_hex, to_b64, print_buffer
+from libhannah.crypto import MT19937
 from libhannah.ssl import pkcs7_pad, pkcs7_unpad, dec_CBC, enc_CBC, enc_ECB, AES_BLOCK_SIZE, detect_ECB, dec_ECB, \
     dec_CTR, enc_CTR
 from libhannah.tools import crack_xor
@@ -174,3 +177,45 @@ class CryptoPalsS1(unittest.TestCase):
         print(keystream)
         for ciphertext in ciphertexts:
             print(xor(ciphertext, keystream))
+
+    def test_challenge21(self):
+        # now = int(datetime.now().timestamp())
+        # self.assertEqual(MT19937(now).genrand_int32(), MT19937(now).genrand_int32())
+        # self.assertNotEqual(MT19937(now).genrand_int32(), MT19937(now + 1).genrand_int32())
+        mt19937_c_1234567890 = [
+            2657703298, 1462474751, 2541004134, 640082991, 3816866956,
+            998313779, 3829628193, 1854614443, 1965237353, 3628085564,
+            3342292366, 728520329, 1147030148, 767688236, 4278243616,
+            40036090, 2319689913, 405604390, 2308637732, 889309503,
+            1722279212, 3455024912, 3029694783, 3377489879, 1740258867,
+            1460526363, 4080179173, 3374255553, 132086902, 1408914639,
+            584222700, 2649164206, 356384632, 124179667, 1819014197,
+            1481381825, 1007157946, 1940179051, 3210209959, 3861000209,
+            2799367980, 1146380362, 2963470829, 4148304223, 704950970,
+            1809127528, 3764200138, 3175596897, 1921281233, 987174450,
+            2485544997, 885670600, 2249610877, 2500129383, 2692474462,
+            2462568875, 1497630491, 3039436152, 1125700123, 1435487641,
+            322039037, 2039021416, 770541610, 3287593442, 3564798172,
+            3370865819, 4241702065, 2650072529, 486452264, 704129540,
+            2742182638, 2112526287, 3137761114, 2076998165, 3793363367,
+            3431682810, 2264349882, 1781218076, 2855623794, 2594604725,
+            3187265510, 4181199635, 4040870452, 502811715, 3011765420,
+            2320408153, 1268490804, 4145478184, 3269946213, 4156281697,
+            3332631785, 3673010362, 1588515731, 725051023, 3844814649,
+            3413184343, 1420895978, 3121895872, 3698345822, 2518763166
+        ]
+        rando = MT19937(s=1234567890)
+        for known in mt19937_c_1234567890:
+            self.assertEqual(known, rando.genrand_int32())
+
+    def test_challenge22(self):
+        past = datetime.now() - timedelta(seconds=random.randint(0, 10000))
+        past_rand_data = MT19937(int(past.timestamp())).genrand_int32()
+
+        for i in range(0, 20000):
+            test_time = datetime.now() - timedelta(seconds=i)
+            test_rand_data = MT19937(int(test_time.timestamp())).genrand_int32()
+            if test_rand_data == past_rand_data:
+                self.assertEqual(past, test_time)
+                return
+        self.assertTrue(False)
