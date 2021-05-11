@@ -1,1 +1,2 @@
-pycryptodome
+pycryptodomex
+z3-solver

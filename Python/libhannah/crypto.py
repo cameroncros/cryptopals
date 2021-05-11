@@ -1,6 +1,8 @@
 # Period parameters
 from typing import List
 
+from z3.z3 import *
+
 
 class MT19937:
     N = 624
@@ -9,11 +11,10 @@ class MT19937:
     UPPER_MASK = 0x80000000  # most significant w-r bits
     LOWER_MASK = 0x7fffffff  # least significant r bits
 
-    mt = [0] * N  # the array for the state vector
-    mti = N + 1  # mti==N+1 means mt[N] is not initialized
-
     # initializes mt[N] with a seed
     def __init__(self, s: int = 5489):
+        self.mt: List[int] = [0] * self.N  # the array for the state vector
+        self.mti: int = self.N + 1  # mti==N+1 means mt[N] is not initialized
         self.mt[0] = s & 0xffffffff
         for i in range(1, self.N):  # (mti=1; mti<N; mti++)
             self.mti = i
@@ -26,37 +27,6 @@ class MT19937:
             # for >32 bit machines
             # print("mt[%i] = 0x%x" % (self.mti, self.mt[self.mti]))
         self.mti = self.N + 1
-
-    # # initialize by an array with array-length
-    # # init_key is the array for initializing keys
-    # # key_length is its length
-    # # slight change for C++, 2004/2/26
-    # def __init__(self, init_key: List[int]):
-    #     self.__init__(19650218)
-    #     i = 1
-    #     j = 0
-    #     k_max = (self.N > len(init_key) if self.N else len(init_key))
-    #     for k in range(k_max, 0, -1):
-    #         self.mt[i] = (self.mt[i] ^ ((self.mt[i - 1] ^ (self.mt[i - 1] >> 30)) * 1664525)) + init_key[
-    #             j] + j  # non linear
-    #         self.mt[i] &= 0xffffffff  # for WORDSIZE > 32 machines
-    #         i += 1
-    #         j += 1
-    #         if i >= self.N:
-    #             self.mt[0] = self.mt[self.N - 1]
-    #             i = 1
-    #         if j >= len(init_key):
-    #             j = 0
-    #
-    #     for k in range(self.N - 1, 0, -1):  # (k=N-1; k; k--) {
-    #         self.mt[i] = (self.mt[i] ^ ((self.mt[i - 1] ^ (self.mt[i - 1] >> 30)) * 156608394)) - i  # non linear
-    #         self.mt[i] &= 0xffffffff  # for WORDSIZE > 32 machines
-    #         i += 1
-    #         if i >= self.N:
-    #             self.mt[0] = self.mt[self.N - 1]
-    #             i = 1
-    #
-    #     self.mt[0] = 0x80000000  # MSB is 1; assuring non-zero initial array
 
     # generates a random number on [0,0xffffffff]-interval
     def genrand_int32(self) -> int:
@@ -112,3 +82,28 @@ class MT19937:
         a = self.genrand_int32() >> 5
         b = self.genrand_int32() >> 6
         return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0)
+
+
+def untemper_MT19937(y_start: int) -> int:
+    # y = state
+    # y = y ^  (y >> 11)
+    # y = y ^ ((y <<  7) & 0x9D2C5680))
+    # y = y ^ ((y << 15) & 0xEFC60000))
+    # y = y ^  (y >> 18)
+    # return y
+    y1 = BitVec('y1', 32)
+    y2 = BitVec('y2', 32)
+    y3 = BitVec('y3', 32)
+    y4 = BitVec('y4', 32)
+    y = BitVecVal(y_start, 32)
+    s = Solver()
+
+    equations = [
+        y2 == y1 ^ (LShR(y1, 11)),
+        y3 == y2 ^ ((y2 << 7) & 0x9D2C5680),
+        y4 == y3 ^ ((y3 << 15) & 0xEFC60000),
+        y == y4 ^ (LShR(y4, 18))
+    ]
+    s.add(equations)
+    s.check()
+    return s.model()[y1].as_long()

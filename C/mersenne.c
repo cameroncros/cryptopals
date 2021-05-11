@@ -68,7 +68,7 @@ void init_genrand(unsigned long s)
         /* for >32 bit machines */
  //       printf("mti[%i] = 0x%x\n", mti, mt[mti]);
     }
-    printf("mti=%i\n",mti);
+ //   printf("mti=%i\n",mti);
 }
 
 /* initialize by an array with array-length */
@@ -132,7 +132,7 @@ unsigned long genrand_int32(void)
     }
 
     y = mt[mti++];
-    printf("y{mti=%i}=0x%x\n",mti-1, y);
+   // printf("y{mti=%i}=0x%x\n",mti-1, y);
 
     /* Tempering */
     y ^= (y >> 11);
@@ -182,10 +182,9 @@ int main(void)
 {
     int i;
     init_genrand(1234567890);    
-    printf("2 outputs of genrand_int32()\n");
-    for (i=0; i<1; i++) {
-      printf("%10lu ", genrand_int32());
-      if (i%5==4) printf("\n");
+ //   printf("1000 outputs of genrand_int32()\n");
+    for (i=0; i<1000; i++) {
+      printf("%10lu\n", genrand_int32());
     }
     return 0;
 }
