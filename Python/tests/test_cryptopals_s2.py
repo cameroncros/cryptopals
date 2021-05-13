@@ -193,6 +193,9 @@ class CryptoPalsS1(unittest.TestCase):
             pkcs7_unpad(b'ICE ICE BABY\x01\x02\x03\x00')
 
     def test_challenge16(self):
+        """
+        CBC Bitflipping
+        """
         data = encrypt_data16(b'a')
         is_admin, _ = check_admin16(data)
         self.assertFalse(is_admin)
