@@ -3,6 +3,8 @@ from typing import List
 
 from z3.z3 import *
 
+from libhannah.xor import xor
+
 
 class MT19937:
     N = 624
@@ -107,3 +109,18 @@ def untemper_MT19937(y_start: int) -> int:
     s.add(equations)
     s.check()
     return s.model()[y1].as_long()
+
+
+def enc_MT19937(buffer: bytes, key: bytes) -> bytes:
+    assert (len(key) == 2)
+    key_int = int.from_bytes(bytes=key, byteorder='little')
+    keystream = b''
+    rando = MT19937(key_int)
+    while len(keystream) < len(buffer):
+        keystream += rando.genrand_int32().to_bytes(byteorder='little', length=4)
+
+    return xor(buffer, keystream)
+
+
+def dec_MT19937(buffer: bytes, key: bytes) -> bytes:
+    return enc_MT19937(buffer, key)

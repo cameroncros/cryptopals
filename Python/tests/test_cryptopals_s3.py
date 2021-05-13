@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Tuple
 
 from libhannah.basics import from_b64, to_b64
-from libhannah.crypto import MT19937, untemper_MT19937
+from libhannah.crypto import MT19937, untemper_MT19937, enc_MT19937, dec_MT19937
 from libhannah.ssl import pkcs7_pad, pkcs7_unpad, dec_CBC, enc_CBC, AES_BLOCK_SIZE, dec_CTR, enc_CTR
 from libhannah.tools import crack_xor
 from libhannah.xor import xor
@@ -226,3 +226,23 @@ class CryptoPalsS3(unittest.TestCase):
 
         for i in range(100):
             self.assertEqual(rando.genrand_int32(), clone.genrand_int32())
+
+    def test_challenge24(self):
+        plaintext = b'Hello from the other side'
+        key = random.randbytes(2)
+        encrypted = enc_MT19937(plaintext, key=key)
+        decrypted = dec_MT19937(encrypted, key=key)
+        self.assertEqual(plaintext, decrypted)
+
+        prefix = random.randbytes(random.randint(0, 15))
+        pw = prefix + b'a'*16
+        encrypted = enc_MT19937(pw, key=key)
+
+        for i in range(0, 65536):
+            test_key = i.to_bytes(byteorder='little', length=2)
+            if b'a'*16 in dec_MT19937(encrypted, key=test_key):
+                self.assertEqual(key, test_key)
+                break
+        else:
+            self.assertTrue(False)
+
