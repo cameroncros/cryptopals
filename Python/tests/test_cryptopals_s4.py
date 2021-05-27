@@ -1,7 +1,10 @@
 import random
+import time
+import timeit
 import unittest
 from datetime import datetime, timedelta
 from typing import Tuple, List
+from unittest import skip
 
 from libhannah.basics import from_b64, to_b64, print_buffer, from_hex, to_hex
 from libhannah.crypto import MT19937, untemper_MT19937, enc_MT19937, dec_MT19937
@@ -95,6 +98,16 @@ def calc_md4_state(sig: bytes) -> List[int]:
         int.from_bytes(bytes=sig[8:12], byteorder='little'),
         int.from_bytes(bytes=sig[12:16], byteorder='little')
     ]
+
+
+def oracle30(data: bytes, sig: bytes):
+    actual_signature = sha1(data)[0]
+    for i in range(len(actual_signature)):
+        if actual_signature[i] != sig[i]:
+            return False
+        time.sleep(0.005)
+    else:
+        return True
 
 
 class CryptoPalsS4(unittest.TestCase):
@@ -242,3 +255,25 @@ class CryptoPalsS4(unittest.TestCase):
                 break
         else:
             self.assertTrue(False)
+
+    @skip  # Takes way too long...
+    def test_challenge31_32(self):
+        """
+        Timing attack
+        """
+        print(sha1(b'testdata')[0])
+        SAMPLES = 100
+        KEY_LENGTH = 40
+        known_key = b''
+        for i in range(KEY_LENGTH):
+            tests = []
+            for c in [b'a', b'b', b'c', b'd', b'e', b'f',
+                      # b'A', b'B', b'C', b'D', b'E', b'F',
+                      b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'0']:
+                key_guess = known_key + c + (b'\x00' * (KEY_LENGTH - len(known_key) - 1))
+                tests.append((c, timeit.timeit(lambda: oracle30(b'testdata', key_guess),
+                                               number=SAMPLES)))
+            tests.sort(key=lambda x: x[1])
+            known_key += tests[-1][0]
+            print("Discovered: %s" % known_key)
+        self.assertEqual(sha1(b'testdata')[0], known_key)
