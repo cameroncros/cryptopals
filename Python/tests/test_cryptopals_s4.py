@@ -5,7 +5,7 @@ from typing import Tuple, List
 
 from libhannah.basics import from_b64, to_b64, print_buffer, from_hex, to_hex
 from libhannah.crypto import MT19937, untemper_MT19937, enc_MT19937, dec_MT19937
-from libhannah.hash import sha1, rotate_left, sha1_pad
+from libhannah.hash import sha1, rotate_left, sha1_pad, md4, md4_pad
 from libhannah.ssl import pkcs7_pad, pkcs7_unpad, dec_CBC, enc_CBC, AES_BLOCK_SIZE, dec_CTR, enc_CTR
 from libhannah.tools import crack_xor
 from libhannah.xor import xor
@@ -60,12 +60,20 @@ def sha1_hmac(hashkey: bytes, data: bytes) -> bytes:
     return sha1(hashkey + data)
 
 
-def hmac_message(message: bytes) -> bytes:
+def sha1_hmac_message(message: bytes) -> bytes:
     return sha1_hmac(key, message)[0]
 
 
-def validate_message(message: bytes, hmac: bytes) -> bool:
-    return hmac_message(message) == hmac
+def sha1_hmac_validate_message(message: bytes, hmac: bytes) -> bool:
+    return sha1_hmac_message(message) == hmac
+
+
+def md4_hmac_message(message: bytes) -> bytes:
+    return md4(key + message)[0]
+
+
+def md4_hmac_validate_message(message: bytes, hmac: bytes) -> bool:
+    return md4_hmac_message(message) == hmac
 
 
 def calc_sha1_state(sig: bytes) -> List[int]:
@@ -76,6 +84,16 @@ def calc_sha1_state(sig: bytes) -> List[int]:
         int.from_bytes(bytes=sig[8:12], byteorder='big'),
         int.from_bytes(bytes=sig[12:16], byteorder='big'),
         int.from_bytes(bytes=sig[16:20], byteorder='big')
+    ]
+
+
+def calc_md4_state(sig: bytes) -> List[int]:
+    sig = from_hex(sig)
+    return [
+        int.from_bytes(bytes=sig[0:4], byteorder='little'),
+        int.from_bytes(bytes=sig[4:8], byteorder='little'),
+        int.from_bytes(bytes=sig[8:12], byteorder='little'),
+        int.from_bytes(bytes=sig[12:16], byteorder='little')
     ]
 
 
@@ -176,10 +194,10 @@ class CryptoPalsS4(unittest.TestCase):
 
     def test_challenge29c(self):
         """
-        SHA1 HMAC defeat - state
+        SHA1 HMAC defeat - length extension
         """
         known_string = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'
-        known_sig = hmac_message(known_string)
+        known_sig = sha1_hmac_message(known_string)
         state = calc_sha1_state(known_sig)
 
         for key_len in range(30):
@@ -188,7 +206,38 @@ class CryptoPalsS4(unittest.TestCase):
             crafted_sig, _ = sha1(b';admin=true',
                                   override_state=state,
                                   override_length=override_length + len(b';admin=true'))
-            if validate_message(known_string + padding + b';admin=true', crafted_sig):
+            if sha1_hmac_validate_message(known_string + padding + b';admin=true', crafted_sig):
+                self.assertEqual(key_len, len(key))
+                break
+        else:
+            self.assertTrue(False)
+
+    def test_challenge30a(self):
+        """
+        MD4 Impl
+        """
+        self.assertEqual(b'31d6cfe0d16ae931b73c59d7e0c089c0',
+                         md4(b'')[0])
+        self.assertEqual(b'1bee69a46ba811185c194762abaeae90',
+                         md4(b'The quick brown fox jumps over the lazy dog')[0])
+        self.assertEqual(b'501af1ef4b68495b5b7e37b15b4cda68',
+                         md4(b'BEES')[0])
+
+    def test_challenge30b(self):
+        """
+        MD4 HMAC defeat - length extension
+        """
+        known_string = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'
+        known_sig = md4_hmac_message(known_string)
+        state = calc_md4_state(known_sig)
+
+        for key_len in range(30):
+            padding = md4_pad(key_len + len(known_string))
+            override_length = key_len + len(known_string) + len(padding)
+            crafted_sig, _ = md4(b';admin=true',
+                                 override_state=state,
+                                 override_length=override_length + len(b';admin=true'))
+            if md4_hmac_validate_message(known_string + padding + b';admin=true', crafted_sig):
                 self.assertEqual(key_len, len(key))
                 break
         else:
