@@ -16,6 +16,7 @@ def from_b64(buffer: bytes):
 def to_b64(buffer: bytes):
     return base64.b64encode(buffer)
 
+
 def print_buffer(buffer: bytes):
     i = 0
     for byte in buffer:
@@ -24,6 +25,6 @@ def print_buffer(buffer: bytes):
         if i % 16 == 0:
             print()
 
+
 def diff_buffers(buffer1: bytes, buffer2: bytes):
     pass
-
