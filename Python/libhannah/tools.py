@@ -1,6 +1,46 @@
-from math import log2
+from math import log2, floor
 
 from libhannah.xor import xor
+import plotly.express as px
+
+
+def guess_key_length(encrypted: bytes, max_key_length=64, show_graph=True) -> int:
+    min_distance = 999
+    min_index = 0
+    x = []
+    y = []
+    for i in range(1, max_key_length):
+        distance = 0
+        num_samples = floor(len(encrypted)/i)-1
+        for j in range(num_samples):
+            distance += hamming_distance(encrypted[j * i: (j + 1) * i],
+                                         encrypted[(j + 1) * i: (j + 2) * i])
+        distance /= num_samples
+        distance /= i * 8
+        print("%i) %f" % (i, distance))
+        if distance < min_distance:
+            min_index = i
+            min_distance = distance
+        x.append(i)
+        y.append(distance)
+
+    if show_graph:
+        fig = px.line(x=x, y=y, title="Hamming Distance - Lower indicates key likelyhood")
+        fig.show()
+    return min_index
+
+
+def crack_repeating_xor(encrypted: bytes, key_length) -> bytes:
+    cipher_key = b''
+    for key in range(key_length):
+        block = b''
+        i = 0
+        while i < len(encrypted):
+            block += encrypted[i + key:i + key + 1]
+            i += key_length
+
+        cipher_key += crack_xor(block)
+    return cipher_key
 
 
 def entropy(buffer: bytes) -> float:  # Possibly broken, 3.5 -> 5 is english, 7.5 - 8 is encrypted

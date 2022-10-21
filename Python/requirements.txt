@@ -1,3 +1,6 @@
 pycryptodomex
+pycryptodome
 z3-solver
 pwntools
+plotly
+pandas

@@ -1,8 +1,9 @@
+import math
 import unittest
 
 from libhannah.basics import to_b64, from_hex, from_b64, to_hex
 from libhannah.ssl import dec_ECB, enc_ECB, detect_ECB
-from libhannah.tools import is_english, hamming_distance, crack_xor
+from libhannah.tools import is_english, hamming_distance, crack_xor, guess_key_length, crack_repeating_xor
 from libhannah.xor import xor
 
 
@@ -84,21 +85,9 @@ class CryptoPalsS1(unittest.TestCase):
         with open("../../C/tests/6.txt", 'rb') as f:
             encrypted = from_b64(f.read())
 
-        min_distance = 999
-        min_index = 0
-        for i in range(1, 64):
-            distance = 0
-            for j in range(10):
-                distance += hamming_distance(encrypted[j * i: (j + 1) * i],
-                                             encrypted[(j + 1) * i: (j + 2) * i])
-            distance /= 10
-            distance /= i * 8
-            print("%i) %f" % (i, distance))
-            if distance < min_distance:
-                min_index = i
-                min_distance = distance
+        key_length = guess_key_length(encrypted)
 
-        self.assertEqual(29, min_index)
+        self.assertEqual(29, key_length)
 
     def test_challenge6c(self):
         """
@@ -107,16 +96,8 @@ class CryptoPalsS1(unittest.TestCase):
         with open("../../C/tests/6.txt", 'rb') as f:
             encrypted = from_b64(f.read())
 
-        key_length = 29
-        cipher_key = b''
-        for key in range(key_length):
-            block = b''
-            i = 0
-            while i < len(encrypted):
-                block += encrypted[i + key:i + key + 1]
-                i += key_length
-
-            cipher_key += crack_xor(block)
+        key_length = guess_key_length(encrypted)
+        cipher_key = crack_repeating_xor(encrypted, key_length)
         self.assertEqual(key_length, len(cipher_key))
         self.assertEqual(b'Terminator X: Bring the noise', cipher_key)
 
